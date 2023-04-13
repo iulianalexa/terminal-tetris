@@ -1,11 +1,7 @@
-#include <ncurses.h>
+#include "src/render.h"
 
 int main() {
-	initscr();
-	printw("TETRIS");
-	refresh();
-	getch();
-	endwin();
+	draw_board();
 
 	return 0;
 }
