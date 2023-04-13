@@ -1,7 +1,7 @@
 #include "src/render.h"
 
 int main() {
-	draw_board();
+	main_draw();
 
 	return 0;
 }
