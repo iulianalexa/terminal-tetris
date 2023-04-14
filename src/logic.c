@@ -13,7 +13,7 @@ void get_random_piece(MovingPiece *mp) {
 	
 	set_pieces();
 	Piece piece = PIECES[type];
-	mp->position.x = BOARD_W / 2 - 1 ;
+	mp->position.x = BOARD_W / 2 - 1;
 	mp->position.y = 1;
 	mp->structure = piece;	
 }

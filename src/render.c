@@ -12,15 +12,14 @@
 
 // This function will be used as an error message if draw_board fails because 
 // of a terminal that is too small.
-void draw_small_error() {
+void draw_small_error(WINDOW *body) {
 	clear();
 	int min_w = 2 * BOARD_W + BOARD_W_PAD; // tetris block: 2x1
 	int min_h = BOARD_H + BOARD_H_PAD;
 	
-	printw("too small\n");
-	printw("allow at least %dx%d\n", min_w, min_h);
-	refresh();
-	getch();
+	wprintw(body, "too small\n");
+	wprintw(body, "allow at least %dx%d\n", min_w, min_h);
+	wrefresh(body);
 }
 
 // This function attempts to draw the game board. If terminal sizes are too 
@@ -30,13 +29,13 @@ void draw_body(WINDOW *body) {
 	
 	// Minimum height
 	if (LINES < BOARD_H + BOARD_H_PAD) {
-		draw_small_error();
+		draw_small_error(body);
 		return;
 	}
 	
 	// Minimum width
 	if (COLS < 2 * BOARD_W + BOARD_W_PAD) {  // tetris block: 2x1
-		draw_small_error();
+		draw_small_error(body);
 		return;
 	}
 	
