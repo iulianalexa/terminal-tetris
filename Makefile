@@ -1,19 +1,22 @@
-CC=gcc
-CFLAGS=-Wall -lncurses
+CC := gcc
+CFLAGS := -Wall -lncurses -g
+SOURCES := $(wildcard src/*.c)
+OBJECTS := $(patsubst src%,bin%,$(patsubst %.c,%.o,$(SOURCES)))
+TARGET := tetris
 
-build: tetris
+build: $(TARGET)
 
-tetris: bin/main.o bin/render.o
-	$(CC) $(CFLAGS) -o tetris bin/main.o bin/render.o
-
+tetris: $(OBJECTS) bin/main.o
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJECTS) bin/main.o
+	
+bin/%.o: src/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+	
 bin/main.o: main.c
 	$(CC) $(CFLAGS) -c main.c -o bin/main.o
-
-bin/render.o: src/render.c
-	$(CC) $(CFLAGS) -c src/render.c -o bin/render.o
 
 run: tetris
 	./tetris
 	
 clean:
-	rm tetris bin/main.o bin/render.o
+	rm tetris bin/*
