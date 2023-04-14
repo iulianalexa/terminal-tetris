@@ -4,11 +4,6 @@
 #include "structs.h"
 #include "logic.h"
 
-#define BOARD_W 2 * 10 // tetris bit = 2x1
-#define BOARD_H 24
-#define BOARD_H_PAD 1 + 2 + 2  // title bar + inner padding + outer padding
-#define BOARD_W_PAD 2 + 2 // inner padding + outer padding
-
 #define TITLE "Terminal Tetris"
 
 // Colour pairs (2-8 are reserved for piece colours)
@@ -19,7 +14,7 @@
 // of a terminal that is too small.
 void draw_small_error() {
 	clear();
-	int min_w = BOARD_W + BOARD_W_PAD;
+	int min_w = 2 * BOARD_W + BOARD_W_PAD; // tetris block: 2x1
 	int min_h = BOARD_H + BOARD_H_PAD;
 	
 	printw("too small\n");
@@ -40,7 +35,7 @@ void draw_body(WINDOW *body) {
 	}
 	
 	// Minimum width
-	if (COLS < BOARD_W + BOARD_W_PAD) {
+	if (COLS < 2 * BOARD_W + BOARD_W_PAD) {  // tetris block: 2x1
 		draw_small_error();
 		return;
 	}
@@ -82,7 +77,7 @@ void main_draw() {
 	
 	title = newwin(1, COLS, 0, 0);
 	body = newwin(LINES - 1, COLS, 1, 0);
-	board = subwin(body, BOARD_H, BOARD_W, 2, 2);
+	board = subwin(body, BOARD_H, 2 * BOARD_W, 2, 2);
 	box(board, 0, 0);
 	
 	wbkgd(title, COLOR_PAIR(TITLE_PAIR));
