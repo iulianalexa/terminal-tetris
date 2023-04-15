@@ -99,6 +99,7 @@ void main_draw() {
 	WINDOW *title, *body, *preboard, *board;
 	MovingPiece mp, upd;
 	List list = create_list();
+	int ch;
 
 	initscr();
 	init_pairs();
@@ -110,17 +111,19 @@ void main_draw() {
 	preboard = subwin(body, BOARD_H + 2, 2 * BOARD_W + 2, 2, 2);
 	// For some reason you can't create a subwin within a subwin
 	board = subwin(body, BOARD_H, 2 * BOARD_W, 3, 3); 
+	keypad(board, 1);
 
 	get_random_piece(&mp);
 
 	draw(title, body, preboard, board, mp);
-	upd = mp;
 
 	do {
+		upd = mp;
 		draw(title, body, preboard, board, mp);
-		upd.position.y++;
-		wgetch(preboard);
-	} while (advance(&mp, &upd, list, NULL, NULL));
+		ch = wgetch(board);
+		input_updater(&upd, ch);
+		advance(&mp, &upd, list, NULL, NULL);
+	} while (ch != 'q');
 
 	endwin();
 }
