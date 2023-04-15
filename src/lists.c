@@ -17,31 +17,38 @@ List create_list() {
 	return list;
 }
 
-// Add node to list and return it. The node value will be alloc'd.
+// Add node to list and return it. The node value will be alloc'd with zeros.
 Node *add_node(List *list) {
 	Node *node = malloc(sizeof(Node)), *prev;
+	list->last_index++;
 	
 	if (node == NULL) {
 		printf(OUT_OF_MEMORY);
 		exit(-1);
 	}
 	
-	node->value = malloc(sizeof(Block) * BOARD_W);
+	node->value = malloc(sizeof(int) * BOARD_W);
+	for (int i = 0; i < BOARD_W; i++) {
+		node->value[i] = 0;
+	}
 	
 	if (node->value == NULL) {
 		printf(OUT_OF_MEMORY);
 		exit(-1);
 	}
 	
+	if (list->end == NULL) {
+		list->start = node;
+		list->end = node;
+		node->link = NULL;
+		return node;
+	}
+
 	node->link = XOR(list->end, NULL);
 	prev = XOR(list->end->link, NULL);
 	list->end->link = XOR(prev, node);
 	list->end = node;
-	if (list->start == NULL) {
-		list->start = node;
-	}
 	
-	list->last_index++;
 	return node;
 }
 
@@ -75,13 +82,28 @@ void remove_node(List *list, Node *node, Node *prev) {
 // offset positions to the left.
 // If the offset is greater than the number of nodes that can be discovered 
 // in that direction, the function will return NULL.
-Node *get_offset_node(Node *node, Node *near, int offset) {
+// This function will also, optionally, find the new near node. If newnear is 
+// NULL, then it will not.
+Node *get_offset_node(Node *node, Node *near, int offset, Node **newnear) {
+	if (offset < 0) {
+		if (newnear != NULL) {
+			*newnear = NULL;
+		}
+		return NULL;
+	}
+
 	for (int i = 0; i < offset; i++) {
 		if (near == NULL) {
+			if (newnear != NULL) {
+				*newnear = NULL;
+			}
 			return NULL;
 		}
 
 		if (near->link == NULL) {
+			if (newnear != NULL) {
+				*newnear = NULL;
+			}
 			return near;
 		}
 
@@ -90,5 +112,8 @@ Node *get_offset_node(Node *node, Node *near, int offset) {
 		near = nearnear;
 	}
 
+	if (newnear != NULL) {
+		*newnear = near;
+	}
 	return node;
 }

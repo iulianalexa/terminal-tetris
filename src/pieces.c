@@ -20,7 +20,7 @@ static void get_piece(Piece *piece, int type) {
 	
 	fscanf(file, "%d", &piece->n_blocks);
 	for (int i = 0; i < piece->n_blocks; i++) {
-		fscanf(file, "%d%d", &block.position.x, &block.position.y);
+		fscanf(file, "%d%d", &block.position.y, &block.position.x);
 		fscanf(file, "%d", &block.colour);
 		piece->blocks[i] = block;
 	}

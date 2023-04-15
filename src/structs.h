@@ -6,6 +6,20 @@
 #define BOARD_H_PAD 1 + 2 + 2  // title bar + inner padding + outer padding
 #define BOARD_W_PAD 2 + 2 // inner padding + outer padding
 
+// The value of each node is an array that saves the colour of the block.
+// 0 -> no block
+typedef struct node {
+	struct node *link;
+	int *value;
+} Node;
+
+// The list needs a last_index in order to efficiently check the collisions 
+// with the moving piece.
+typedef struct {
+	Node *start, *end;
+	int last_index;
+} List;
+
 typedef struct {
 	int x, y;
 } Point;
@@ -23,21 +37,10 @@ typedef struct {
 } Piece;
 
 // This structure defines the moving piece.
+// Each moving piece has a line associated with it in a list -> current is 
+// the associated node, prev is the previous node. (NULL if out of bounds)
 typedef struct {
 	Point position;
 	Piece structure;
+	Node *current, *prev;
 } MovingPiece;
-
-// The value of each node is an array that saves the colour of the block.
-// 0 -> no block
-typedef struct node {
-	struct node *link;
-	int *value;
-} Node;
-
-// The list needs a last_index in order to efficiently check the collisions 
-// with the moving piece.
-typedef struct {
-	Node *start, *end;
-	int last_index;
-} List;

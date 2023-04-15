@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 #include "structs.h"
-#include "logic.h"
 #include "lists.h"
 
 #define TITLE "Terminal Tetris"
@@ -54,8 +53,24 @@ int draw_body(WINDOW *body) {
 	return 1;
 }
 
-void draw_board(WINDOW *board, MovingPiece mp) {
+void draw_board(WINDOW *board, MovingPiece mp, List list) {
 	wclear(board);
+
+	// Rendering the static pieces
+
+	int y = BOARD_H - 1;
+	Node *current = NULL, *next = list.start;
+	while (next != NULL) {
+		for (int i = 0; i < BOARD_W; i++) {
+			wattron(board, COLOR_PAIR(next->value[i]));
+			mvwaddstr(board, y, 2 * i, "  ");
+			wattroff(board, COLOR_PAIR(next->value[i]));
+		}
+		y--;
+		current = get_offset_node(current, next, 1, &next);
+	}
+
+	// Rendering the dynamic piece
 
 	for (int i = 0; i < mp.structure.n_blocks; i++) {
 		Block block = mp.structure.blocks[i];
@@ -65,12 +80,12 @@ void draw_board(WINDOW *board, MovingPiece mp) {
 		mvwaddstr(board, y, x, "  ");
 		wattroff(board, COLOR_PAIR(block.colour));
 	}
-	
+
 	wrefresh(board);
 }
 
 void draw(WINDOW *title, WINDOW *body, WINDOW *preboard, WINDOW *board, 
-		  MovingPiece mp) {
+		  MovingPiece mp, List list) {
 	draw_title(title);
 
 	if (!draw_body(body)) {
@@ -80,7 +95,7 @@ void draw(WINDOW *title, WINDOW *body, WINDOW *preboard, WINDOW *board,
 	wclear(preboard);
 	box(preboard, 0, 0);
 	wrefresh(preboard);
-	draw_board(board, mp);
+	draw_board(board, mp, list);
 }
 	
 void init_pairs() {
@@ -95,35 +110,22 @@ void init_pairs() {
 	init_pair(8, COLOR_BLACK, COLOR_RED);
 }
 
-void main_draw() {
-	WINDOW *title, *body, *preboard, *board;
-	MovingPiece mp, upd;
-	List list = create_list();
-	int ch;
-
+void draw_begin(WINDOW **title, WINDOW **body, 
+				WINDOW **preboard, WINDOW **board) {
 	initscr();
 	init_pairs();
 	curs_set(0);
 	noecho();
 
-	title = newwin(1, COLS, 0, 0);
-	body = newwin(LINES - 1, COLS, 1, 0);
-	preboard = subwin(body, BOARD_H + 2, 2 * BOARD_W + 2, 2, 2);
+	*title = newwin(1, COLS, 0, 0);
+	*body = newwin(LINES - 1, COLS, 1, 0);
+	*preboard = subwin(*body, BOARD_H + 2, 2 * BOARD_W + 2, 2, 2);
 	// For some reason you can't create a subwin within a subwin
-	board = subwin(body, BOARD_H, 2 * BOARD_W, 3, 3); 
-	keypad(board, 1);
+	*board = subwin(*body, BOARD_H, 2 * BOARD_W, 3, 3); 
+	keypad(*board, 1);
+	wtimeout(*board, 0);
+}
 
-	get_random_piece(&mp);
-
-	draw(title, body, preboard, board, mp);
-
-	do {
-		upd = mp;
-		draw(title, body, preboard, board, mp);
-		ch = wgetch(board);
-		input_updater(&upd, ch);
-		advance(&mp, &upd, list, NULL, NULL);
-	} while (ch != 'q');
-
+void draw_end() {
 	endwin();
 }
