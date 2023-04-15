@@ -11,14 +11,12 @@ typedef struct {
 } Point;
 
 // This structure defines the coordinates of a block and its colour.
-
 typedef struct {
 	Point position;
 	int colour;
 } Block;
 
 // This structure describes a piece. The position of each block is relative.
-
 typedef struct {
 	Block blocks[MAX_PIECE_BLOCKS];
 	int n_blocks;
@@ -30,11 +28,15 @@ typedef struct {
 	Piece structure;
 } MovingPiece;
 
+// The value of each node is an array that saves the colour of the block.
 typedef struct node {
 	struct node *link;
-	Block *value;
+	int *value;
 } Node;
 
+// The list needs a last_index in order to efficiently check the collisions 
+// with the moving piece.
 typedef struct {
 	Node *start, *end;
+	int last_index;
 } List;

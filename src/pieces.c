@@ -10,7 +10,6 @@ Piece PIECES[N_PIECES];
 // Each piece structure is saved in a file in the pieces folder. Each file 
 // contains the number of blocks, followed by that many lines containing 
 // the x, y coordinates and the colour of each block.
-
 static void get_piece(Piece *piece, int type) {
 	FILE *file;
 	Block block;

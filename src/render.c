@@ -7,7 +7,6 @@
 #define TITLE "Terminal Tetris"
 
 // Colour pairs (2-8 are reserved for piece colours)
-
 #define TITLE_PAIR 1
 
 // This function will be used as an error message if draw_board fails because 

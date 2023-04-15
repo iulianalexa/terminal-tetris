@@ -8,11 +8,11 @@
 #define XOR(a, b) (Node *)((intptr_t)(a)^(intptr_t)(b))
 
 // Create a list
-
 List create_list() {
 	List list;
 	list.start = NULL;
 	list.end = NULL;
+	list.last_index = -1;
 	
 	return list;
 }
@@ -41,11 +41,11 @@ Node *add_node(List *list) {
 		list->start = node;
 	}
 	
+	list->last_index++;
 	return node;
 }
 
 // Remove node from list. This requires knowing what the previous node is.
-
 void remove_node(List *list, Node *node, Node *prev) {
 	Node *next = XOR(node->link, prev);
 	
@@ -65,5 +65,30 @@ void remove_node(List *list, Node *node, Node *prev) {
 	
 	free(node->value);
 	free(node);
+	list->last_index--;
 }	
-	
+
+// This function returns the node offset positions away from the current node.
+// If near is the succeding node, then the function will return the node at
+// offset positions to the right.
+// If near is the preceding node, then the function will return the node at 
+// offset positions to the left.
+// If the offset is greater than the number of nodes that can be discovered 
+// in that direction, the function will return NULL.
+Node *get_offset_node(Node *node, Node *near, int offset) {
+	for (int i = 0; i < offset; i++) {
+		if (near == NULL) {
+			return NULL;
+		}
+
+		if (near->link == NULL) {
+			return near;
+		}
+
+		Node *nearnear = XOR(near->link, node);
+		node = near;
+		near = nearnear;
+	}
+
+	return node;
+}
