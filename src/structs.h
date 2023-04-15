@@ -29,6 +29,7 @@ typedef struct {
 } MovingPiece;
 
 // The value of each node is an array that saves the colour of the block.
+// 0 -> no block
 typedef struct node {
 	struct node *link;
 	int *value;

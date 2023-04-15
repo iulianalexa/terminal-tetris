@@ -48,3 +48,16 @@ int check_collisions(MovingPiece mp, List list, Node *current, Node *prev) {
 
 	return 0;
 }
+
+// This function does a collision check on the updated moving piece. If there 
+// are no collisions, it updates the moving piece.
+int advance(MovingPiece *mp, MovingPiece *upd, List list, Node *current, 
+			 Node *prev) {
+	if (check_collisions(*upd, list, current, prev)) {
+		// Collision -> advance not successful
+		return 0;
+	}
+
+	*mp = *upd;
+	return 1;
+}
