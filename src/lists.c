@@ -12,7 +12,7 @@ List create_list() {
 	List list;
 	list.start = NULL;
 	list.end = NULL;
-	list.last_index = -1;
+	list.count = 0;
 	
 	return list;
 }
@@ -20,7 +20,7 @@ List create_list() {
 // Add node to list and return it. The node value will be alloc'd with zeros.
 Node *add_node(List *list) {
 	Node *node = malloc(sizeof(Node)), *prev;
-	list->last_index++;
+	list->count++;
 	
 	if (node == NULL) {
 		printf(OUT_OF_MEMORY);
@@ -72,20 +72,38 @@ void remove_node(List *list, Node *node, Node *prev) {
 	
 	free(node->value);
 	free(node);
-	list->last_index--;
+	list->count--;
 }	
 
 // This function returns the node offset positions away from the current node.
 // If near is the succeding node, then the function will return the node at
-// offset positions to the right.
-// If near is the preceding node, then the function will return the node at 
 // offset positions to the left.
+// If near is the preceding node, then the function will return the node at 
+// offset positions to the right.
 // If the offset is greater than the number of nodes that can be discovered 
 // in that direction, the function will return NULL.
 // This function will also, optionally, find the new near node. If newnear is 
 // NULL, then it will not.
 Node *get_offset_node(Node *node, Node *near, int offset, Node **newnear) {
 	if (offset < 0) {
+		// this should return NULL...
+		if (newnear != NULL) {
+			*newnear = NULL;
+		}
+
+		return NULL;
+	}
+
+	if (offset == 0) {
+		// No change
+		if (newnear != NULL) {
+			*newnear = near;
+		}
+		return node;
+	}
+
+	if (node == NULL) {
+		// Everything after node, in the opposite direction, will be NULL.
 		if (newnear != NULL) {
 			*newnear = NULL;
 		}
@@ -93,27 +111,45 @@ Node *get_offset_node(Node *node, Node *near, int offset, Node **newnear) {
 	}
 
 	for (int i = 0; i < offset; i++) {
-		if (near == NULL) {
+		Node *opp = XOR(node->link, near);
+		if (opp == NULL) {
+			if (i == offset - 1) {
+				// node is the "first", no more discovering
+				if (newnear != NULL) {
+					*newnear = node;
+				}
+				return NULL;
+			}
+			
+			// both NULL
 			if (newnear != NULL) {
 				*newnear = NULL;
 			}
 			return NULL;
 		}
-
-		if (near->link == NULL) {
-			if (newnear != NULL) {
-				*newnear = NULL;
-			}
-			return near;
-		}
-
-		Node *nearnear = XOR(near->link, node);
-		node = near;
-		near = nearnear;
+	
+		near = node;
+		node = opp;
+	
 	}
 
+	// Found new nodes
 	if (newnear != NULL) {
 		*newnear = near;
 	}
+
 	return node;
+}
+
+// This function wraps around get_offset_node. It is used for getting nodes 
+// from OOB (out of bounds) positions.
+Node *get_oob_offset_node(Node *node, Node *near, int offset, Node **newnear, 
+						  int index, List list) {
+	if (near == NULL && node == NULL) {
+		offset -= index - (list.count - 1);
+		node = list.end;
+		near = NULL;
+	}
+
+	return get_offset_node(node, near, offset, newnear);
 }

@@ -59,15 +59,15 @@ void draw_board(WINDOW *board, MovingPiece mp, List list) {
 	// Rendering the static pieces
 
 	int y = BOARD_H - 1;
-	Node *current = NULL, *next = list.start;
-	while (next != NULL) {
+	Node *current = list.start, *prev = NULL;
+	while (current != NULL) {
 		for (int i = 0; i < BOARD_W; i++) {
-			wattron(board, COLOR_PAIR(next->value[i]));
+			wattron(board, COLOR_PAIR(current->value[i]));
 			mvwaddstr(board, y, 2 * i, "  ");
-			wattroff(board, COLOR_PAIR(next->value[i]));
+			wattroff(board, COLOR_PAIR(current->value[i]));
 		}
 		y--;
-		current = get_offset_node(current, next, 1, &next);
+		current = get_offset_node(current, prev, 1, &prev);
 	}
 
 	// Rendering the dynamic piece

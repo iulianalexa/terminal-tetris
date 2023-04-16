@@ -17,7 +17,7 @@ typedef struct node {
 // with the moving piece.
 typedef struct {
 	Node *start, *end;
-	int last_index;
+	int count;
 } List;
 
 typedef struct {
@@ -38,9 +38,9 @@ typedef struct {
 
 // This structure defines the moving piece.
 // Each moving piece has a line associated with it in a list -> current is 
-// the associated node, prev is the previous node. (NULL if out of bounds)
+// the associated node, next is the next node. (NULL if out of bounds)
 typedef struct {
 	Point position;
 	Piece structure;
-	Node *current, *prev;
+	Node *current, *next;
 } MovingPiece;

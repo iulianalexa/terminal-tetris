@@ -20,9 +20,9 @@ static void sleep_ms(int ms) {
 	nanosleep(&ts, NULL);
 }
 
-// Find what y a list index translates to
-static int list_index_to_y(int ind) {
-	return BOARD_H - 1 - ind;
+// Find what list index a y coordinate would translate to
+static int list_index_from_y(int y) {
+	return BOARD_H - 1 - y;
 }
 
 // This function updates the moving piece with a random one.
@@ -35,8 +35,8 @@ static void get_random_piece(MovingPiece *mp, List list) {
 	mp->position.x = BOARD_W / 2 - 1;
 	mp->position.y = 1;
 	mp->structure = piece;
-	mp->current = get_offset_node(NULL, list.end, mp->position.y - 
-		list_index_to_y(list.last_index), &mp->prev);
+	mp->current = get_oob_offset_node(NULL, NULL, mp->position.y, &mp->next,
+		BOARD_H, list);
 }
 
 // This function checks if there is a collision between the moving piece and 
@@ -53,13 +53,14 @@ static int check_collisions(MovingPiece mp, List list) {
 			return 1;
 		}
 
-		if (mp.position.y + offset_y < BOARD_H - 1 - list.last_index) {
+		if (list_index_from_y(mp.position.y + offset_y) >= list.count) {
 			// This line does not exist in the list, no collision here.
 			continue;
 		}
 
 		// This line exists in the list.
-		Node *line = get_offset_node(mp.current, mp.prev, offset_y, NULL);
+		Node *line = get_oob_offset_node(mp.current, mp.next, offset_y, NULL, 
+			list_index_from_y(mp.position.y), list);
 		if (line == NULL) {
 			// Collision with the ground
 			return 1;
@@ -88,15 +89,8 @@ static int advance(MovingPiece *mp, MovingPiece *upd, List list) {
 
 static void move_down(MovingPiece *upd, List list) {
 	upd->position.y++;
-	if (upd->prev == NULL && 
-		upd->position.y - 1 == list_index_to_y(list.last_index)) {
-		upd->prev = list.end;
-	} else if (upd->prev != NULL && upd->current == NULL) {
-		upd->current = upd->prev;
-		upd->prev = get_offset_node(NULL, upd->current, 2, NULL);
-	} else if (upd->prev != NULL && upd->current != NULL) {
-		upd->current = get_offset_node(upd->current, upd->prev, 1, &upd->prev);
-	}
+	upd->current = get_oob_offset_node(upd->current, upd->next, 1, &upd->next, 
+		list_index_from_y(upd->position.y), list);
 }
 
 // This function updates the moving piece accordingly.
@@ -117,16 +111,16 @@ static void input_updater(MovingPiece *upd, int ch, List list) {
 // This function places the moving piece into the list.
 static void place_piece(MovingPiece *mp, List *list) {
 	if (mp->current == NULL) {
-		while (list_index_to_y(list->last_index) > mp->position.y) {
+		while (list_index_from_y(mp->position.y) > list->count - 1) {
 			mp->current = add_node(list);
 		}
 
-		mp->prev = get_offset_node(NULL, mp->current, 2, NULL);
+		mp->next = NULL;
 	}
 	
 	for (int i = 0; i < mp->structure.n_blocks; i++) {
 		Block block = mp->structure.blocks[i];
-		Node *node = get_offset_node(mp->current, mp->prev, block.position.y, 
+		Node *node = get_offset_node(mp->current, mp->next, block.position.y, 
 			NULL);
 		node->value[mp->position.x + block.position.x] = block.colour;
 	}
