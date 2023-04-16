@@ -8,7 +8,7 @@
 #include "lists.h"
 #include "render.h"
 
-#define TICKRATE 20
+#define TICKRATE 25
 
 extern Piece PIECES[N_PIECES];
 
@@ -88,9 +88,9 @@ static int advance(MovingPiece *mp, MovingPiece *upd, List list) {
 }
 
 static void move_down(MovingPiece *upd, List list) {
-	upd->position.y++;
 	upd->current = get_oob_offset_node(upd->current, upd->next, 1, &upd->next, 
 		list_index_from_y(upd->position.y), list);
+	upd->position.y++;
 }
 
 // This function updates the moving piece accordingly.
@@ -136,10 +136,11 @@ void begin() {
 	draw_begin(&title, &body, &preboard, &board);
 	get_random_piece(&mp, list);
 
-	wgetch(body); // debug
+	//wgetch(body); // debug
+	draw(title, body, preboard, board, mp, list);
 
 	while (1) {
-		draw(title, body, preboard, board, mp, list);
+		draw_board(board, mp, list);
 		upd = mp;
 
 		// Get input
