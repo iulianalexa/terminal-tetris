@@ -11,6 +11,7 @@
 #define TICKRATE 25
 
 extern Piece PIECES[N_PIECES];
+extern Piece ROTATED_PIECES[N_PIECES][ROTATIONS];
 
 // Sleep in milliseconds
 static void sleep_ms(int ms) {
@@ -23,20 +24,6 @@ static void sleep_ms(int ms) {
 // Find what list index a y coordinate would translate to
 static int list_index_from_y(int y) {
 	return BOARD_H - 1 - y;
-}
-
-// This function updates the moving piece with a random one.
-static void get_random_piece(MovingPiece *mp, List list) {
-	srand(time(NULL));
-	int type = rand() % N_PIECES;
-	
-	set_pieces();
-	Piece piece = PIECES[type];
-	mp->position.x = BOARD_W / 2 - 1;
-	mp->position.y = 1;
-	mp->structure = piece;
-	mp->current = get_oob_offset_node(NULL, NULL, mp->position.y, &mp->next,
-		BOARD_H, list);
 }
 
 // This function checks if there is a collision between the moving piece and 
@@ -74,6 +61,28 @@ static int check_collisions(MovingPiece mp, List list) {
 	return 0;
 }
 
+// This function updates the moving piece with a random one.
+static int get_random_piece(MovingPiece *mp, List list) {
+	srand(time(NULL));
+	int type = rand() % N_PIECES;
+	
+	Piece piece = PIECES[type];
+	mp->position.x = BOARD_W / 2 - 1;
+	mp->position.y = 1;
+	mp->rotation = -1;
+	mp->type = type;
+	mp->structure = piece;
+	mp->current = get_oob_offset_node(NULL, NULL, mp->position.y, &mp->next,
+		BOARD_H, list);
+
+	if (check_collisions(*mp, list)) {
+		// Collided on generation. That means you lose :)
+		return 0;
+	}
+
+	return 1;
+}
+
 // This function does a collision check on the updated moving piece. If there 
 // are no collisions, it updates the moving piece.
 // This will only work as intended with one update at a time!
@@ -85,6 +94,25 @@ static int advance(MovingPiece *mp, MovingPiece *upd, List list) {
 
 	*mp = *upd;
 	return 1;
+}
+
+// This function attempts the rotation of the moving piece, according to SRS.
+// https://tetris.wiki/Super_Rotation_System
+static void rotate(MovingPiece *mp, List list) {
+	int tries = 0;
+	do {
+		tries++;
+		mp->rotation++;
+		if (mp->rotation == ROTATIONS) {
+			mp->rotation = -1;
+		}
+
+		if (mp->rotation == -1) {
+			mp->structure = PIECES[mp->type];
+		} else {
+			mp->structure = ROTATED_PIECES[mp->type][mp->rotation];
+		}
+	} while(check_collisions(*mp, list) && tries < ROTATIONS);
 }
 
 static void move_down(MovingPiece *upd, List list) {
@@ -104,6 +132,9 @@ static void input_updater(MovingPiece *upd, int ch, List list) {
 			break;
 		case KEY_DOWN:
 			move_down(upd, list);
+			break;
+		case KEY_UP:
+			rotate(upd, list);
 			break;
 	}
 }
@@ -134,9 +165,10 @@ void begin() {
 	int frames_until_fall = TICKRATE / 2, frames_drawn = 0, ch;
 
 	draw_begin(&title, &body, &preboard, &board);
+	wgetch(body); // debug
+	set_pieces();
 	get_random_piece(&mp, list);
 
-	//wgetch(body); // debug
 	draw(title, body, preboard, board, mp, list);
 
 	while (1) {
@@ -156,7 +188,10 @@ void begin() {
 			if (advance(&mp, &upd, list) == 0) {
 				// Could not advance piece further: place and regenerate
 				place_piece(&mp, &list);
-				get_random_piece(&mp, list);
+				if (!get_random_piece(&mp, list)) {
+					// Lose condition
+					break;
+				}
 
 			}
 			frames_drawn = -1;

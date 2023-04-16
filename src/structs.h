@@ -1,5 +1,6 @@
 #define N_PIECES 7
 #define MAX_PIECE_BLOCKS 4
+#define ROTATIONS 3
 
 #define BOARD_W 10
 #define BOARD_H 24
@@ -39,8 +40,10 @@ typedef struct {
 // This structure defines the moving piece.
 // Each moving piece has a line associated with it in a list -> current is 
 // the associated node, next is the next node. (NULL if out of bounds)
+// Rotation: -1 (default); 0-2 -> rotations
 typedef struct {
 	Point position;
 	Piece structure;
 	Node *current, *next;
+	int type, rotation;
 } MovingPiece;
