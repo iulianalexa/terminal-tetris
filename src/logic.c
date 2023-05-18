@@ -100,7 +100,6 @@ static void get_projection(MovingPiece *mp, List list) {
 
 // This function updates the moving piece with a random one.
 static int get_random_piece(MovingPiece *mp, List list) {
-	srand(time(NULL));
 	int type = rand() % N_PIECES;
 	
 	Piece piece = PIECES[type];
@@ -218,6 +217,8 @@ void begin() {
 	MovingPiece mp, upd;
 	List list = create_list();
 	int frames_until_fall = TICKRATE / 2, frames_drawn = 0, ch;
+
+	srand(time(NULL));
 
 	draw_begin(&title, &body, &preboard, &board);
 	wgetch(body); // debug
