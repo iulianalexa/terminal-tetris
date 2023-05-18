@@ -121,6 +121,15 @@ static void move_down(MovingPiece *upd, List list) {
 	upd->position.y++;
 }
 
+// Forcefully make a piece fall (equivalent to spacebar on most implementations)
+static void fall(MovingPiece *mp, List list) {
+	MovingPiece upd;
+	do {
+		upd = *mp;
+		move_down(&upd, list);
+	} while (advance(mp, &upd, list));
+}
+
 // This function updates the moving piece accordingly.
 static void input_updater(MovingPiece *upd, int ch, List list) {
 	switch (ch) {
@@ -136,6 +145,36 @@ static void input_updater(MovingPiece *upd, int ch, List list) {
 		case KEY_UP:
 			rotate(upd, list);
 			break;
+		// Space treated separately in begin
+	}
+}
+
+// This function checks if a line is complete.
+static int line_complete(Node *node) {
+	for (int i = 0; i < BOARD_W; i++) {
+		if (node->value[i] == 0) {
+			return 0;
+		}
+	}
+	
+	return 1;
+}
+
+// This function checks for completed lines starting from the given node, up to 
+// check_upto lines. If any completed line is found, break it.
+static void check_break_lines(List *list, Node *node, Node *next,
+							  int check_upto) {
+	while (node != NULL && check_upto > 0) {
+		if (line_complete(node)) {
+			// Find prev node
+			Node *prev = get_offset_node(node, next, 1, NULL);
+			remove_node(list, node, prev);
+			node = prev;
+		} else {
+			// Keep going
+			node = get_offset_node(node, next, 1, &next);
+		}
+		check_upto--;
 	}
 }
 
@@ -151,9 +190,11 @@ static void place_piece(MovingPiece *mp, List *list) {
 	
 	for (int i = 0; i < mp->structure.n_blocks; i++) {
 		Block block = mp->structure.blocks[i];
+		Node *near;
 		Node *node = get_offset_node(mp->current, mp->next, block.position.y, 
-			NULL);
+			&near);
 		node->value[mp->position.x + block.position.x] = block.colour;
+		check_break_lines(list, node, near, 4);
 	}
 }
 
@@ -177,6 +218,14 @@ void begin() {
 
 		// Get input
 		while ((ch = wgetch(board)) != -1) {
+			if (ch == ' ') {
+				fall(&mp, list);
+				// force place
+				frames_drawn = frames_until_fall;
+				upd = mp;
+				break;
+			}
+			
 			input_updater(&upd, ch, list);
 			advance(&mp, &upd, list);
 			upd = mp;
