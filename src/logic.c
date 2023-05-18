@@ -61,6 +61,43 @@ static int check_collisions(MovingPiece mp, List list) {
 	return 0;
 }
 
+// This function does a collision check on the updated moving piece. If there 
+// are no collisions, it updates the moving piece.
+// This will only work as intended with one update at a time!
+static int advance(MovingPiece *mp, MovingPiece *upd, List list) {
+	if (check_collisions(*upd, list)) {
+		// Collision -> advance not successful
+		return 0;
+	}
+
+	*mp = *upd;
+	return 1;
+}
+
+static void move_down(MovingPiece *upd, List list) {
+	upd->current = get_oob_offset_node(upd->current, upd->next, 1, &upd->next, 
+		list_index_from_y(upd->position.y), list);
+	upd->position.y++;
+}
+
+// Forcefully make a piece fall (equivalent to spacebar on most implementations)
+static void fall(MovingPiece *mp, List list) {
+	MovingPiece upd;
+	do {
+		upd = *mp;
+		move_down(&upd, list);
+	} while (advance(mp, &upd, list));
+}
+
+// Update the projection coordinates of a piece. A projection is a preview of 
+// the piece position if the user were to force fall.
+static void get_projection(MovingPiece *mp, List list) {
+	MovingPiece upd;
+	upd = *mp;
+	fall(&upd, list);
+	mp->projection = upd.position;
+}
+
 // This function updates the moving piece with a random one.
 static int get_random_piece(MovingPiece *mp, List list) {
 	srand(time(NULL));
@@ -80,19 +117,8 @@ static int get_random_piece(MovingPiece *mp, List list) {
 		return 0;
 	}
 
-	return 1;
-}
+	get_projection(mp, list);
 
-// This function does a collision check on the updated moving piece. If there 
-// are no collisions, it updates the moving piece.
-// This will only work as intended with one update at a time!
-static int advance(MovingPiece *mp, MovingPiece *upd, List list) {
-	if (check_collisions(*upd, list)) {
-		// Collision -> advance not successful
-		return 0;
-	}
-
-	*mp = *upd;
 	return 1;
 }
 
@@ -115,35 +141,23 @@ static void rotate(MovingPiece *mp, List list) {
 	} while(check_collisions(*mp, list) && tries < ROTATIONS);
 }
 
-static void move_down(MovingPiece *upd, List list) {
-	upd->current = get_oob_offset_node(upd->current, upd->next, 1, &upd->next, 
-		list_index_from_y(upd->position.y), list);
-	upd->position.y++;
-}
-
-// Forcefully make a piece fall (equivalent to spacebar on most implementations)
-static void fall(MovingPiece *mp, List list) {
-	MovingPiece upd;
-	do {
-		upd = *mp;
-		move_down(&upd, list);
-	} while (advance(mp, &upd, list));
-}
-
 // This function updates the moving piece accordingly.
 static void input_updater(MovingPiece *upd, int ch, List list) {
 	switch (ch) {
 		case KEY_LEFT:
 			upd->position.x--;
+			get_projection(upd, list);
 			break;
 		case KEY_RIGHT:
 			upd->position.x++;
+			get_projection(upd, list);
 			break;
 		case KEY_DOWN:
 			move_down(upd, list);
 			break;
 		case KEY_UP:
 			rotate(upd, list);
+			get_projection(upd, list);
 			break;
 		// Space treated separately in begin
 	}

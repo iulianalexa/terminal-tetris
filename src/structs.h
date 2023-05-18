@@ -42,7 +42,7 @@ typedef struct {
 // the associated node, next is the next node. (NULL if out of bounds)
 // Rotation: -1 (default); 0-2 -> rotations
 typedef struct {
-	Point position;
+	Point position, projection;
 	Piece structure;
 	Node *current, *next;
 	int type, rotation;

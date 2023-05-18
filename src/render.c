@@ -70,6 +70,14 @@ void draw_board(WINDOW *board, MovingPiece mp, List list) {
 		current = get_offset_node(current, prev, 1, &prev);
 	}
 
+	// Rendering the projection
+	for (int i = 0; i < mp.structure.n_blocks; i++) {
+		Block block = mp.structure.blocks[i];
+		int x = 2 * (mp.projection.x + block.position.x);
+		int y = mp.projection.y + block.position.y;
+		mvwaddstr(board, y, x, "xx");	
+	}
+
 	// Rendering the dynamic piece
 
 	for (int i = 0; i < mp.structure.n_blocks; i++) {
