@@ -92,22 +92,15 @@ void draw_board(WINDOW *board, MovingPiece mp, List list) {
 	wrefresh(board);
 }
 
-// Draw the hold display. If piece points to NULL, doesn't change anything (it 
-// still redraws).
+// Draw the hold display. If piece points to NULL, don't draw anything inside.
 void draw_hold_display(WINDOW *hold_display, Piece *piece) {
-	static Piece *todraw = NULL;
-
-	if (piece != NULL) {
-		todraw = piece;
-	}
-
 	wclear(hold_display);
 	box (hold_display, 0, 0);
 	mvwprintw(hold_display, 0, 1, "Held");
 
-	if (todraw != NULL) {
-		for (int i = 0; i < todraw->n_blocks; i++) {
-			Block block = todraw->blocks[i];
+	if (piece != NULL) {
+		for (int i = 0; i < piece->n_blocks; i++) {
+			Block block = piece->blocks[i];
 			int x = 1 + 2 * block.position.x;
 			int y = 1 + block.position.y;
 			wattron(hold_display, COLOR_PAIR(block.colour));
@@ -127,7 +120,7 @@ void draw_score_display(WINDOW *score_display, int score, int level) {
 	wrefresh(score_display);
 }
 
-void draw(GameWindows gw, MovingPiece mp, List list, int score, int level) {
+void draw(GameWindows gw, MovingPiece mp, List list) {
 	draw_title(gw.title);
 
 	if (!draw_body(gw.body)) {
@@ -138,7 +131,7 @@ void draw(GameWindows gw, MovingPiece mp, List list, int score, int level) {
 	box(gw.preboard, 0, 0);
 	wrefresh(gw.preboard);
 	draw_board(gw.board, mp, list);
-	draw_score_display(gw.score_display, score, level);
+	draw_score_display(gw.score_display, 0, 1);
 	draw_hold_display(gw.hold_display, NULL);
 }
 	

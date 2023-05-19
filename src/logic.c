@@ -284,7 +284,7 @@ int begin() {
 	set_pieces();
 	get_random_piece(&mp, list);
 
-	draw(gw, mp, list, score, level);
+	draw(gw, mp, list);
 
 	while (1) {
 		draw_board(gw.board, mp, list);
@@ -326,7 +326,7 @@ int begin() {
 				if (changes > 0) {
 					score += changes;
 					level_advancer(score, &level, &frames_until_fall);
-					draw(gw, mp, list, score, level);
+					draw_score_display(gw.score_display, score, level);
 				}
 
 				if (!get_random_piece(&mp, list)) {
