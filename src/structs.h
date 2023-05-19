@@ -36,7 +36,8 @@ typedef struct {
 // This structure describes a piece. The position of each block is relative.
 typedef struct {
 	Block blocks[MAX_PIECE_BLOCKS];
-	int n_blocks;
+	int n_blocks, even;
+	Point center;
 } Piece;
 
 // This structure defines the moving piece.
@@ -49,7 +50,3 @@ typedef struct {
 	Node *current, *next;
 	int type, rotation;
 } MovingPiece;
-
-typedef struct {
-	WINDOW *title, *body, *preboard, *board, *score_display, *hold_display;
-} GameWindows;

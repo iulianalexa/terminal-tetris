@@ -4,6 +4,7 @@
 #include <ncurses.h>
 
 #include "structs.h"
+#include "ncstructs.h"
 #include "pieces.h"
 #include "lists.h"
 #include "render.h"
@@ -101,8 +102,8 @@ static void get_projection(MovingPiece *mp, List list) {
 // This function updates the moving piece with a specific one.
 static int get_specific_piece(MovingPiece *mp, List list, int type) {
 	Piece piece = PIECES[type];
-	mp->position.x = BOARD_W / 2 - 1;
-	mp->position.y = 1;
+	mp->position.x = BOARD_W / 2 - piece.center.x;
+	mp->position.y = 0;
 	mp->rotation = -1;
 	mp->type = type;
 	mp->structure = piece;

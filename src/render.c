@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "structs.h"
+#include "ncstructs.h"
 #include "lists.h"
 
 #define TITLE "Terminal Tetris"
@@ -159,7 +160,7 @@ void draw_begin(GameWindows *gw) {
 	// For some reason you can't create a subwin within a subwin
 	gw->board = subwin(gw->body, BOARD_H, 2 * BOARD_W, 3, 3); 
 	gw->score_display = subwin(gw->body, 2, COLS, BOARD_H + 5, 0);
-	gw->hold_display = subwin(gw->body, 4, 10, 2, BOARD_H + 4);
+	gw->hold_display = subwin(gw->body, 6, 10, 2, 2 * BOARD_W + 2 + 2 + 2);
 	keypad(gw->board, 1);
 	wtimeout(gw->board, 0);
 }

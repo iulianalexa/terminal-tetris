@@ -1,4 +1,6 @@
+# L piece as a 3x3 grid
 4
+1 1 0
 0 2 4
 1 0 4
 1 1 4

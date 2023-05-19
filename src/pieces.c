@@ -14,29 +14,6 @@ void swap(int *x, int *y) {
 	*x = *x ^ *y;
 }
 
-// This function ensures piece correction. Especially useful with rotations, 
-// it ensures that blocks begin starting x=0 and y=0.
-static void correct_piece(Piece *piece) {
-	int x_min = piece->blocks[0].position.x;
-	int y_min = piece->blocks[0].position.y;
-
-	for (int i = 1; i < piece->n_blocks; i++) {
-		if (piece->blocks[i].position.x < x_min) {
-			x_min = piece->blocks[i].position.x;
-		}
-
-		if (piece->blocks[i].position.y < y_min) {
-			y_min = piece->blocks[i].position.y;
-		}
-	}
-
-	// Subtract from each block's position (make zero)
-	for (int i = 0; i < piece->n_blocks; i++) {
-		piece->blocks[i].position.x -= x_min;
-		piece->blocks[i].position.y -= y_min;
-	}
-}
-
 // This function returns a piece with a certain type. It is only used 
 // internally.
 // Each piece structure is saved in a file in the pieces folder. Each file 
@@ -50,7 +27,10 @@ static void get_piece(Piece *piece, int type) {
 	sprintf(filepath, "pieces/piece_%d.txt", type);
 	file = fopen(filepath, "r");
 	
+	fscanf(file, "%*[^\n]");			// skip first line (a comment)
 	fscanf(file, "%d", &piece->n_blocks);
+	fscanf(file, "%d%d", &piece->center.x, &piece->center.y); // center of grid
+	fscanf(file, "%d", &piece->even);
 	for (int i = 0; i < piece->n_blocks; i++) {
 		fscanf(file, "%d%d", &block.position.y, &block.position.x);
 		fscanf(file, "%d", &block.colour);
@@ -58,13 +38,14 @@ static void get_piece(Piece *piece, int type) {
 	}
 	
 	fclose(file);
-	correct_piece(piece);
 }
 
 static void get_rotated_piece(Piece piece, Piece rotated[ROTATIONS]) {
 	// Copy
 	for (int i = 0; i < ROTATIONS; i++) {
 		rotated[i].n_blocks = piece.n_blocks;
+		rotated[i].center = piece.center;
+		rotated[i].even = piece.even;
 		for (int j = 0; j < piece.n_blocks; j++) {
 			rotated[i].blocks[j].position = piece.blocks[j].position;
 			rotated[i].blocks[j].colour = piece.blocks[j].colour;
@@ -75,13 +56,24 @@ static void get_rotated_piece(Piece piece, Piece rotated[ROTATIONS]) {
 		// Rotate i + 1 times. (x, y) -> (y, -x)
 		for (int j = 0; j < i + 1; j++) {
 			for (int k = 0; k < rotated[i].n_blocks; k++) {
+				// Subtract center before rotating (origin is center)
+				rotated[i].blocks[k].position.x -= 
+					rotated[i].center.x;
+				rotated[i].blocks[k].position.y -=
+					rotated[i].center.y;
+
 				swap(&rotated[i].blocks[k].position.x, 
 					&rotated[i].blocks[k].position.y);
-				rotated[i].blocks[k].position.y *= -1;
+				rotated[i].blocks[k].position.x *= -1;
+				rotated[i].blocks[k].position.x -= rotated[i].even;
+
+				// Add center back in
+				rotated[i].blocks[k].position.x += 
+					rotated[i].center.x;
+				rotated[i].blocks[k].position.y +=
+					rotated[i].center.y;
 			}
 		}
-
-		correct_piece(&rotated[i]);
 	}
 }
 
