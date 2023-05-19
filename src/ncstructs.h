@@ -2,4 +2,5 @@
 
 typedef struct {
 		WINDOW *title, *body, *preboard, *board, *score_display, *hold_display;
+        WINDOW *next_display;
 } GameWindows;

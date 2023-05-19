@@ -93,6 +93,26 @@ void draw_board(WINDOW *board, MovingPiece mp, List list) {
 	wrefresh(board);
 }
 
+// Draw the next display. If piece points to NULL, don't draw anything inside.
+void draw_next_display(WINDOW *next_display, Piece *piece) {
+	wclear(next_display);
+	box (next_display, 0, 0);
+	mvwprintw(next_display, 0, 1, "Next");
+
+	if (piece != NULL) {
+		for (int i = 0; i < piece->n_blocks; i++) {
+			Block block = piece->blocks[i];
+			int x = 1 + 2 * block.position.x;
+			int y = 1 + block.position.y;
+			wattron(next_display, COLOR_PAIR(block.colour));
+			mvwaddstr(next_display, y, x, "  ");
+			wattroff(next_display, COLOR_PAIR(block.colour));
+		}
+	}
+
+	wrefresh(next_display);
+}
+
 // Draw the hold display. If piece points to NULL, don't draw anything inside.
 void draw_hold_display(WINDOW *hold_display, Piece *piece) {
 	wclear(hold_display);
@@ -134,6 +154,7 @@ void draw(GameWindows gw, MovingPiece mp, List list) {
 	draw_board(gw.board, mp, list);
 	draw_score_display(gw.score_display, 0, 1);
 	draw_hold_display(gw.hold_display, NULL);
+	draw_next_display(gw.next_display, NULL);
 }
 	
 void init_pairs() {
@@ -160,7 +181,8 @@ void draw_begin(GameWindows *gw) {
 	// For some reason you can't create a subwin within a subwin
 	gw->board = subwin(gw->body, BOARD_H, 2 * BOARD_W, 3, 3); 
 	gw->score_display = subwin(gw->body, 2, COLS, BOARD_H + 5, 0);
-	gw->hold_display = subwin(gw->body, 6, 10, 2, 2 * BOARD_W + 2 + 2 + 2);
+	gw->next_display = subwin(gw->body, 6, 10, 2, 2 * BOARD_W + 2 + 2 + 2);
+	gw->hold_display = subwin(gw->body, 6, 10, 10, 2 * BOARD_W + 2 + 2 + 2);
 	keypad(gw->board, 1);
 	wtimeout(gw->board, 0);
 }

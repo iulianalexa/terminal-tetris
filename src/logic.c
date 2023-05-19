@@ -120,10 +120,16 @@ static int get_specific_piece(MovingPiece *mp, List list, int type) {
 	return 1;
 }
 
-// This function updates the moving piece with a random one.
-static int get_random_piece(MovingPiece *mp, List list) {
-	int type = rand() % N_PIECES;
-	
+// This function gets the next piece and updates the new next.
+// If type is -1, it also randomises the first piece (used for initiating)
+static int get_next_piece(MovingPiece *mp, List list, int type, 
+						  int *next_type) {
+	if (type == -1) {
+		type = rand() % N_PIECES;
+	}
+
+	*next_type = rand() % N_PIECES;
+
 	return get_specific_piece(mp, list, type);
 }
 
@@ -275,7 +281,7 @@ int begin() {
 	MovingPiece mp, upd;
 	List list = create_list();
 	float frames_until_fall = TICKRATE / 2, frames_drawn = 0.0;
-	int ch, type_of_held_piece, has_held = 0;
+	int ch, type_of_held_piece = -1, has_held = 0, type_of_next_piece = -1;
 	int score = 0, level = 1;
 
 	srand(time(NULL));
@@ -283,9 +289,10 @@ int begin() {
 	draw_begin(&gw);
 	wgetch(gw.body); // debug
 	set_pieces();
-	get_random_piece(&mp, list);
+	get_next_piece(&mp, list, type_of_next_piece, &type_of_next_piece);
 
 	draw(gw, mp, list);
+	draw_next_display(gw.next_display, &PIECES[type_of_next_piece]);
 
 	while (1) {
 		draw_board(gw.board, mp, list);
@@ -301,9 +308,19 @@ int begin() {
 				break;
 			} else if (!has_held && (ch == 'c' || ch == 'C')) {
 				has_held = 1;
-				int tmp = mp.type;
-				get_specific_piece(&mp, list, type_of_held_piece);
-				type_of_held_piece = tmp;
+				if (type_of_held_piece == -1) {
+					// No currently held piece, get from next.
+					type_of_held_piece = mp.type;
+					get_next_piece(&mp, list, type_of_next_piece, 
+						&type_of_next_piece);
+					draw_next_display(gw.next_display, 
+						&PIECES[type_of_next_piece]);
+				} else {
+					int tmp = mp.type;
+					get_specific_piece(&mp, list, type_of_held_piece);
+					type_of_held_piece = tmp;
+				}
+
 				draw_hold_display(gw.hold_display, &PIECES[type_of_held_piece]);
 				frames_drawn = -1.0;
 				upd = mp;
@@ -330,9 +347,13 @@ int begin() {
 					draw_score_display(gw.score_display, score, level);
 				}
 
-				if (!get_random_piece(&mp, list)) {
+				if (!get_next_piece(&mp, list, type_of_next_piece, 
+					&type_of_next_piece)) {
 					// Lose condition
 					break;
+				} else {
+					draw_next_display(gw.next_display, 
+						&PIECES[type_of_next_piece]);
 				}
 
 			}
