@@ -1,1 +1,1 @@
-void begin();
+int begin();

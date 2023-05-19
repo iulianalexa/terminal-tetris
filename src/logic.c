@@ -8,7 +8,7 @@
 #include "lists.h"
 #include "render.h"
 
-#define TICKRATE 25
+#define TICKRATE 25.0
 
 extern Piece PIECES[N_PIECES];
 extern Piece ROTATED_PIECES[N_PIECES][ROTATIONS];
@@ -175,24 +175,50 @@ static int line_complete(Node *node) {
 
 // This function checks for completed lines starting from the given node, up to 
 // check_upto lines. If any completed line is found, break it.
-static void check_break_lines(List *list, Node *node, Node *next,
-							  int check_upto) {
+static int check_break_lines(List *list, Node *node, Node *next,
+							  int check_upto, int level) {
+
+	int base_score = 0;
+	int lines_cleared = 0;
+
 	while (node != NULL && check_upto > 0) {
 		if (line_complete(node)) {
 			// Find prev node
 			Node *prev = get_offset_node(node, next, 1, NULL);
 			remove_node(list, node, prev);
 			node = prev;
+			lines_cleared++;
 		} else {
 			// Keep going
 			node = get_offset_node(node, next, 1, &next);
 		}
 		check_upto--;
 	}
+
+	// Add base score depending on how many lines were broken
+	switch (lines_cleared) {
+		case 1:
+			base_score = 100;
+			break;
+		case 2:
+			base_score = 300;
+			break;
+		case 3:
+			base_score = 500;
+			break;
+		case 4:
+			base_score = 800;
+			break;
+	}
+
+	return base_score * level;
 }
 
-// This function places the moving piece into the list.
-static void place_piece(MovingPiece *mp, List *list) {
+// This function places the moving piece into the list. It returns the points 
+// awarded after placing the piece.
+static int place_piece(MovingPiece *mp, List *list, int level) {
+	int score = 0;
+
 	if (mp->current == NULL) {
 		while (list_index_from_y(mp->position.y) > list->count - 1) {
 			mp->current = add_node(list);
@@ -207,25 +233,52 @@ static void place_piece(MovingPiece *mp, List *list) {
 		Node *node = get_offset_node(mp->current, mp->next, block.position.y, 
 			&near);
 		node->value[mp->position.x + block.position.x] = block.colour;
-		check_break_lines(list, node, near, 4);
+		score += check_break_lines(list, node, near, 4, level);
+	}
+
+	return score;
+}
+
+// Advance level if needed.
+const void level_advancer(int score, int *level, float *frames_until_fall) {
+	int cond;
+
+	while (1) {
+		cond = (score > *level * 1000);
+		if (*level >= 10) {
+			cond = (score > 10000);
+		}
+
+		if (*level == 15) {
+			cond = 0;
+		}
+
+		if (!cond) {
+			break;
+		}
+
+		*level = *level + 1;
+		*frames_until_fall = *frames_until_fall - 0.8;
 	}
 }
 
-// This function starts the game.
-void begin() {
-	WINDOW *title, *body, *preboard, *board;
+// This function starts the game. Returns the score.
+int begin() {
+	WINDOW *title, *body, *preboard, *board, *score_display;
 	MovingPiece mp, upd;
 	List list = create_list();
-	int frames_until_fall = TICKRATE / 2, frames_drawn = 0, ch;
+	float frames_until_fall = TICKRATE / 2, frames_drawn = 0.0;
+	int ch;
+	int score = 0, level = 1;
 
 	srand(time(NULL));
 
-	draw_begin(&title, &body, &preboard, &board);
+	draw_begin(&title, &body, &preboard, &board, &score_display);
 	wgetch(body); // debug
 	set_pieces();
 	get_random_piece(&mp, list);
 
-	draw(title, body, preboard, board, mp, list);
+	draw(title, body, preboard, board, score_display, mp, list, score, level);
 
 	while (1) {
 		draw_board(board, mp, list);
@@ -247,23 +300,33 @@ void begin() {
 		}
 
 		// Tick down after a certain amount of passes
-		if (frames_drawn == frames_until_fall) {
+		if (frames_drawn >= frames_until_fall) {
 			move_down(&upd, list);
 			if (advance(&mp, &upd, list) == 0) {
 				// Could not advance piece further: place and regenerate
-				place_piece(&mp, &list);
+				int changes = place_piece(&mp, &list, level);
+
+				if (changes > 0) {
+					score += changes;
+					level_advancer(score, &level, &frames_until_fall);
+					draw(title, body, preboard, board, score_display, mp, list, 
+						score, level);
+				}
+
 				if (!get_random_piece(&mp, list)) {
 					// Lose condition
 					break;
 				}
 
 			}
-			frames_drawn = -1;
+			frames_drawn = -1.0;
 		}
 
 		frames_drawn++;
-		sleep_ms(1000 / TICKRATE);
+		sleep_ms((int) (1000 / TICKRATE));
 	}
 
 	draw_end();
+
+	return score;
 }

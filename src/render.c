@@ -38,7 +38,7 @@ int draw_body(WINDOW *body) {
 	wresize(body, LINES - 1, COLS);
 	
 	// Minimum height
-	if (LINES < BOARD_H + BOARD_H_PAD) {
+	if (LINES < BOARD_H + BOARD_H_PAD + SCORE_PAD_H) {
 		draw_small_error(body);
 		return 0;
 	}
@@ -92,8 +92,16 @@ void draw_board(WINDOW *board, MovingPiece mp, List list) {
 	wrefresh(board);
 }
 
+void draw_score_display(WINDOW *score_display, int score, int level) {
+	wclear(score_display);
+
+	wprintw(score_display, "Score: %d\nLevel: %d\n", score, level);
+	wrefresh(score_display);
+}
+
 void draw(WINDOW *title, WINDOW *body, WINDOW *preboard, WINDOW *board, 
-		  MovingPiece mp, List list) {
+		  WINDOW *score_display, MovingPiece mp, List list, int score, 
+		  int level) {
 	draw_title(title);
 
 	if (!draw_body(body)) {
@@ -104,6 +112,7 @@ void draw(WINDOW *title, WINDOW *body, WINDOW *preboard, WINDOW *board,
 	box(preboard, 0, 0);
 	wrefresh(preboard);
 	draw_board(board, mp, list);
+	draw_score_display(score_display, score, level);
 }
 	
 void init_pairs() {
@@ -119,7 +128,7 @@ void init_pairs() {
 }
 
 void draw_begin(WINDOW **title, WINDOW **body, 
-				WINDOW **preboard, WINDOW **board) {
+				WINDOW **preboard, WINDOW **board, WINDOW **score_display) {
 	initscr();
 	init_pairs();
 	curs_set(0);
@@ -130,6 +139,7 @@ void draw_begin(WINDOW **title, WINDOW **body,
 	*preboard = subwin(*body, BOARD_H + 2, 2 * BOARD_W + 2, 2, 2);
 	// For some reason you can't create a subwin within a subwin
 	*board = subwin(*body, BOARD_H, 2 * BOARD_W, 3, 3); 
+	*score_display = subwin(*body, 2, COLS, BOARD_H + 5, 0);
 	keypad(*board, 1);
 	wtimeout(*board, 0);
 }
