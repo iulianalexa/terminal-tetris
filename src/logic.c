@@ -98,17 +98,15 @@ static void get_projection(MovingPiece *mp, List list) {
 	mp->projection = upd.position;
 }
 
-// This function updates the moving piece with a random one.
-static int get_random_piece(MovingPiece *mp, List list) {
-	int type = rand() % N_PIECES;
-	
+// This function updates the moving piece with a specific one.
+static int get_specific_piece(MovingPiece *mp, List list, int type) {
 	Piece piece = PIECES[type];
 	mp->position.x = BOARD_W / 2 - 1;
 	mp->position.y = 1;
 	mp->rotation = -1;
 	mp->type = type;
 	mp->structure = piece;
-	mp->current = get_oob_offset_node(NULL, NULL, mp->position.y, &mp->next,
+	mp->current = get_oob_offset_node(NULL, NULL, mp->position.y, &mp->next, 
 		BOARD_H, list);
 
 	if (check_collisions(*mp, list)) {
@@ -119,6 +117,13 @@ static int get_random_piece(MovingPiece *mp, List list) {
 	get_projection(mp, list);
 
 	return 1;
+}
+
+// This function updates the moving piece with a random one.
+static int get_random_piece(MovingPiece *mp, List list) {
+	int type = rand() % N_PIECES;
+	
+	return get_specific_piece(mp, list, type);
 }
 
 // This function attempts the rotation of the moving piece, according to SRS.
@@ -159,6 +164,7 @@ static void input_updater(MovingPiece *upd, int ch, List list) {
 			get_projection(upd, list);
 			break;
 		// Space treated separately in begin
+		// C treated separately in begin
 	}
 }
 
@@ -268,7 +274,7 @@ int begin() {
 	MovingPiece mp, upd;
 	List list = create_list();
 	float frames_until_fall = TICKRATE / 2, frames_drawn = 0.0;
-	int ch;
+	int ch, type_of_held_piece, has_held = 0;
 	int score = 0, level = 1;
 
 	srand(time(NULL));
@@ -292,6 +298,15 @@ int begin() {
 				frames_drawn = frames_until_fall;
 				upd = mp;
 				break;
+			} else if (!has_held && (ch == 'c' || ch == 'C')) {
+				has_held = 1;
+				int tmp = mp.type;
+				get_specific_piece(&mp, list, type_of_held_piece);
+				type_of_held_piece = tmp;
+				draw_hold_display(gw.hold_display, &PIECES[type_of_held_piece]);
+				frames_drawn = -1.0;
+				upd = mp;
+				break;
 			}
 			
 			input_updater(&upd, ch, list);
@@ -305,6 +320,8 @@ int begin() {
 			if (advance(&mp, &upd, list) == 0) {
 				// Could not advance piece further: place and regenerate
 				int changes = place_piece(&mp, &list, level);
+				// Allow player to hold pieces again
+				has_held = 0;
 
 				if (changes > 0) {
 					score += changes;

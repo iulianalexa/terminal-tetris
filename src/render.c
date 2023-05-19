@@ -44,7 +44,7 @@ int draw_body(WINDOW *body) {
 	}
 	
 	// Minimum width
-	if (COLS < 2 * BOARD_W + BOARD_W_PAD) {  // tetris block: 2x1
+	if (COLS < 2 * BOARD_W + BOARD_W_PAD + HOLD_PAD_W) {  // tetris block: 2x1
 		draw_small_error(body);
 		return 0;
 	}
@@ -92,6 +92,34 @@ void draw_board(WINDOW *board, MovingPiece mp, List list) {
 	wrefresh(board);
 }
 
+// Draw the hold display. If piece points to NULL, doesn't change anything (it 
+// still redraws).
+void draw_hold_display(WINDOW *hold_display, Piece *piece) {
+	static Piece *todraw = NULL;
+
+	if (piece != NULL) {
+		todraw = piece;
+	}
+
+	wclear(hold_display);
+	box (hold_display, 0, 0);
+	mvwprintw(hold_display, 0, 1, "Held");
+
+	if (todraw != NULL) {
+		for (int i = 0; i < todraw->n_blocks; i++) {
+			Block block = todraw->blocks[i];
+			int x = 1 + 2 * block.position.x;
+			int y = 1 + block.position.y;
+			wattron(hold_display, COLOR_PAIR(block.colour));
+			mvwaddstr(hold_display, y, x, "  ");
+			wattroff(hold_display, COLOR_PAIR(block.colour));
+		}
+	}
+
+	wrefresh(hold_display);
+}
+
+// Draw the score and level
 void draw_score_display(WINDOW *score_display, int score, int level) {
 	wclear(score_display);
 
@@ -111,6 +139,7 @@ void draw(GameWindows gw, MovingPiece mp, List list, int score, int level) {
 	wrefresh(gw.preboard);
 	draw_board(gw.board, mp, list);
 	draw_score_display(gw.score_display, score, level);
+	draw_hold_display(gw.hold_display, NULL);
 }
 	
 void init_pairs() {
@@ -137,6 +166,7 @@ void draw_begin(GameWindows *gw) {
 	// For some reason you can't create a subwin within a subwin
 	gw->board = subwin(gw->body, BOARD_H, 2 * BOARD_W, 3, 3); 
 	gw->score_display = subwin(gw->body, 2, COLS, BOARD_H + 5, 0);
+	gw->hold_display = subwin(gw->body, 4, 10, 2, BOARD_H + 4);
 	keypad(gw->board, 1);
 	wtimeout(gw->board, 0);
 }

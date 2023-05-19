@@ -7,6 +7,7 @@
 #define BOARD_H_PAD 1 + 2 + 2  // title bar + inner padding + outer padding
 #define BOARD_W_PAD 2 + 2 // inner padding + outer padding
 #define SCORE_PAD_H 3
+#define HOLD_PAD_W 12
 
 // The value of each node is an array that saves the colour of the block.
 // 0 -> no block
