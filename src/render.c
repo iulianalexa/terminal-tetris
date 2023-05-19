@@ -99,20 +99,18 @@ void draw_score_display(WINDOW *score_display, int score, int level) {
 	wrefresh(score_display);
 }
 
-void draw(WINDOW *title, WINDOW *body, WINDOW *preboard, WINDOW *board, 
-		  WINDOW *score_display, MovingPiece mp, List list, int score, 
-		  int level) {
-	draw_title(title);
+void draw(GameWindows gw, MovingPiece mp, List list, int score, int level) {
+	draw_title(gw.title);
 
-	if (!draw_body(body)) {
+	if (!draw_body(gw.body)) {
 		return;
 	}
 
-	wclear(preboard);
-	box(preboard, 0, 0);
-	wrefresh(preboard);
-	draw_board(board, mp, list);
-	draw_score_display(score_display, score, level);
+	wclear(gw.preboard);
+	box(gw.preboard, 0, 0);
+	wrefresh(gw.preboard);
+	draw_board(gw.board, mp, list);
+	draw_score_display(gw.score_display, score, level);
 }
 	
 void init_pairs() {
@@ -127,21 +125,20 @@ void init_pairs() {
 	init_pair(8, COLOR_BLACK, COLOR_RED);
 }
 
-void draw_begin(WINDOW **title, WINDOW **body, 
-				WINDOW **preboard, WINDOW **board, WINDOW **score_display) {
+void draw_begin(GameWindows *gw) {
 	initscr();
 	init_pairs();
 	curs_set(0);
 	noecho();
 
-	*title = newwin(1, COLS, 0, 0);
-	*body = newwin(LINES - 1, COLS, 1, 0);
-	*preboard = subwin(*body, BOARD_H + 2, 2 * BOARD_W + 2, 2, 2);
+	gw->title = newwin(1, COLS, 0, 0);
+	gw->body = newwin(LINES - 1, COLS, 1, 0);
+	gw->preboard = subwin(gw->body, BOARD_H + 2, 2 * BOARD_W + 2, 2, 2);
 	// For some reason you can't create a subwin within a subwin
-	*board = subwin(*body, BOARD_H, 2 * BOARD_W, 3, 3); 
-	*score_display = subwin(*body, 2, COLS, BOARD_H + 5, 0);
-	keypad(*board, 1);
-	wtimeout(*board, 0);
+	gw->board = subwin(gw->body, BOARD_H, 2 * BOARD_W, 3, 3); 
+	gw->score_display = subwin(gw->body, 2, COLS, BOARD_H + 5, 0);
+	keypad(gw->board, 1);
+	wtimeout(gw->board, 0);
 }
 
 void draw_end() {

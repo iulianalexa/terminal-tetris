@@ -48,3 +48,7 @@ typedef struct {
 	Node *current, *next;
 	int type, rotation;
 } MovingPiece;
+
+typedef struct {
+	WINDOW *title, *body, *preboard, *board, *score_display, *hold_display;
+} GameWindows;

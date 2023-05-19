@@ -264,7 +264,7 @@ const void level_advancer(int score, int *level, float *frames_until_fall) {
 
 // This function starts the game. Returns the score.
 int begin() {
-	WINDOW *title, *body, *preboard, *board, *score_display;
+	GameWindows gw;
 	MovingPiece mp, upd;
 	List list = create_list();
 	float frames_until_fall = TICKRATE / 2, frames_drawn = 0.0;
@@ -273,19 +273,19 @@ int begin() {
 
 	srand(time(NULL));
 
-	draw_begin(&title, &body, &preboard, &board, &score_display);
-	wgetch(body); // debug
+	draw_begin(&gw);
+	wgetch(gw.body); // debug
 	set_pieces();
 	get_random_piece(&mp, list);
 
-	draw(title, body, preboard, board, score_display, mp, list, score, level);
+	draw(gw, mp, list, score, level);
 
 	while (1) {
-		draw_board(board, mp, list);
+		draw_board(gw.board, mp, list);
 		upd = mp;
 
 		// Get input
-		while ((ch = wgetch(board)) != -1) {
+		while ((ch = wgetch(gw.board)) != -1) {
 			if (ch == ' ') {
 				fall(&mp, list);
 				// force place
@@ -309,8 +309,7 @@ int begin() {
 				if (changes > 0) {
 					score += changes;
 					level_advancer(score, &level, &frames_until_fall);
-					draw(title, body, preboard, board, score_display, mp, list, 
-						score, level);
+					draw(gw, mp, list, score, level);
 				}
 
 				if (!get_random_piece(&mp, list)) {
