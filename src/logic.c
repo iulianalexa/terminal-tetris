@@ -284,7 +284,8 @@ int begin() {
 	int ch, type_of_held_piece = -1, has_held = 0, type_of_next_piece = -1;
 	int score = 0, level = 1;
 
-	srand(time(NULL));
+	int seed = time(NULL);
+	srand(seed);
 
 	draw_begin(&gw);
 	wgetch(gw.body); // debug
