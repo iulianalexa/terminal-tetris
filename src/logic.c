@@ -137,7 +137,7 @@ static int get_next_piece(MovingPiece *mp, List list, int type,
 // https://tetris.wiki/Super_Rotation_System
 static void rotate(MovingPiece *mp, List list) {
 	int tries = 0;
-	do {
+	/*do {
 		tries++;
 		mp->rotation++;
 		if (mp->rotation == ROTATIONS) {
@@ -149,7 +149,58 @@ static void rotate(MovingPiece *mp, List list) {
 		} else {
 			mp->structure = ROTATED_PIECES[mp->type][mp->rotation];
 		}
-	} while(check_collisions(*mp, list) && tries < ROTATIONS);
+	} while(check_collisions(*mp, list) && tries < ROTATIONS);*/
+
+	while (tries < ROTATIONS) {
+		tries++;
+
+		mp->rotation++;
+		if (mp->rotation == ROTATIONS) {
+			mp->rotation = -1;
+		}
+
+		if (mp->rotation == -1) {
+			mp->structure = PIECES[mp->type];
+		} else {
+			mp->structure = ROTATED_PIECES[mp->type][mp->rotation];
+		}
+
+		// Regular rotation
+		if (!check_collisions(*mp, list)) {
+			break;
+		}
+
+		// Help the player by trying to increment or decrement x
+		mp->position.x--;
+		if (!check_collisions(*mp, list)) {
+			break;
+		}
+
+		// Go one further if it's a line
+		if (mp->type == 0) {
+			mp->position.x--;
+			if (!check_collisions(*mp, list)) {
+				break;
+			}
+			mp->position.x++;
+		}
+
+		mp->position.x = mp->position.x + 2;
+		if (!check_collisions(*mp, list)) {
+			break;
+		}
+
+		// Go one further if it's a line
+		if (mp->type == 0) {
+			mp->position.x++;
+			if (!check_collisions(*mp, list)) {
+				break;
+			}
+			mp->position.x--;
+		}
+
+		mp->position.x--;
+	}
 }
 
 // This function updates the moving piece accordingly.
