@@ -256,9 +256,9 @@ const void level_advancer(int score, int *level, float *frames_until_fall) {
 	int cond;
 
 	while (1) {
-		cond = (score > *level * 1000);
+		cond = (score > (*level * (*level + 1)) / 2 * 1000);
 		if (*level >= 10) {
-			cond = (score > 10000);
+			cond = (score > 10 / 2 * 11 * 1000);
 		}
 
 		if (*level == 15) {
