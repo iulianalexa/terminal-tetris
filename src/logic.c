@@ -242,13 +242,12 @@ static int place_piece(MovingPiece *mp, List *list, int level) {
 	
 	for (int i = 0; i < mp->structure.n_blocks; i++) {
 		Block block = mp->structure.blocks[i];
-		Node *near;
 		Node *node = get_offset_node(mp->current, mp->next, block.position.y, 
-			&near);
+			NULL);
 		node->value[mp->position.x + block.position.x] = block.colour;
-		score += check_break_lines(list, node, near, 4, level);
 	}
 
+	score += check_break_lines(list, mp->current, mp->next, 4, level);
 	return score;
 }
 
