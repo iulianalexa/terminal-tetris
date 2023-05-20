@@ -274,6 +274,23 @@ const void level_advancer(int score, int *level, float *frames_until_fall) {
 	}
 }
 
+// Resize the game and pause if the window is too small.
+static void resize_and_pause(GameWindows *gw, MovingPiece mp, List list, 
+							 Piece *next_piece, Piece *held_piece) {
+	int can_continue = resize_game(gw, mp, list, next_piece, held_piece);
+	int ch;
+
+	wtimeout(gw->board, -1);	// blocking read
+	while (!can_continue) {
+		ch = wgetch(gw->board);
+		if (ch == KEY_RESIZE) {
+			can_continue = resize_game(gw, mp, list, next_piece, held_piece);
+			wtimeout(gw->board, -1);
+		}
+	}
+	wtimeout(gw->board, 0);		// make it non-blocking again
+}
+
 // This function starts the game. Returns the score.
 int begin() {
 	GameWindows gw;
@@ -291,8 +308,9 @@ int begin() {
 	set_pieces();
 	get_next_piece(&mp, list, type_of_next_piece, &type_of_next_piece);
 
-	draw(gw, mp, list);
-	draw_next_display(gw.next_display, &PIECES[type_of_next_piece]);
+	if (!draw(gw, mp, list, &PIECES[type_of_next_piece], NULL)) {
+		resize_and_pause(&gw, mp, list, &PIECES[type_of_next_piece], NULL);
+	}
 
 	while (1) {
 		draw_board(gw.board, mp, list);
@@ -300,7 +318,14 @@ int begin() {
 
 		// Get input
 		while ((ch = wgetch(gw.board)) != -1) {
-			if (ch == ' ') {
+			if (ch == KEY_RESIZE) {
+				Piece *held_piece = NULL;
+				if (type_of_held_piece > -1) {
+					held_piece = &PIECES[type_of_held_piece];
+				}
+				resize_and_pause(&gw, mp, list, &PIECES[type_of_next_piece], 
+					held_piece);
+			} else if (ch == ' ') {
 				fall(&mp, list);
 				// force place
 				frames_drawn = frames_until_fall;

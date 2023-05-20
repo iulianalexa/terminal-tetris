@@ -141,11 +141,12 @@ void draw_score_display(WINDOW *score_display, int score, int level) {
 	wrefresh(score_display);
 }
 
-void draw(GameWindows gw, MovingPiece mp, List list) {
+int draw(GameWindows gw, MovingPiece mp, List list, Piece *next_piece, 
+		  Piece *held_piece) {
 	draw_title(gw.title);
 
 	if (!draw_body(gw.body)) {
-		return;
+		return 0;
 	}
 
 	wclear(gw.preboard);
@@ -153,8 +154,10 @@ void draw(GameWindows gw, MovingPiece mp, List list) {
 	wrefresh(gw.preboard);
 	draw_board(gw.board, mp, list);
 	draw_score_display(gw.score_display, 0, 1);
-	draw_hold_display(gw.hold_display, NULL);
-	draw_next_display(gw.next_display, NULL);
+	draw_next_display(gw.next_display, next_piece);
+	draw_hold_display(gw.hold_display, held_piece);
+
+	return 1;
 }
 	
 void init_pairs() {
@@ -169,12 +172,18 @@ void init_pairs() {
 	init_pair(8, COLOR_BLACK, COLOR_RED);
 }
 
-void draw_begin(GameWindows *gw) {
-	initscr();
-	init_pairs();
-	curs_set(0);
-	noecho();
+void del_wins(GameWindows gw) {
+	delwin(gw.preboard);
+	delwin(gw.board);
+	delwin(gw.score_display);
+	delwin(gw.next_display);
+	delwin(gw.hold_display);
+	delwin(gw.title);
+	delwin(gw.body);
+	refresh();
+}
 
+void set_wins(GameWindows *gw) {
 	gw->title = newwin(1, COLS, 0, 0);
 	gw->body = newwin(LINES - 1, COLS, 1, 0);
 	gw->preboard = subwin(gw->body, BOARD_H + 2, 2 * BOARD_W + 2, 2, 2);
@@ -185,6 +194,24 @@ void draw_begin(GameWindows *gw) {
 	gw->hold_display = subwin(gw->body, 6, 10, 10, 2 * BOARD_W + 2 + 2 + 2);
 	keypad(gw->board, 1);
 	wtimeout(gw->board, 0);
+	refresh();
+}
+
+int resize_game(GameWindows *gw, MovingPiece mp, List list, 
+				Piece *next_piece, Piece *held_piece) {
+	// Complete redraw
+	del_wins(*gw);
+	set_wins(gw);
+	return draw(*gw, mp, list, next_piece, held_piece);	
+}
+
+void draw_begin(GameWindows *gw) {
+	initscr();
+	init_pairs();
+	curs_set(0);
+	noecho();
+
+	set_wins(gw);
 }
 
 void draw_end() {
