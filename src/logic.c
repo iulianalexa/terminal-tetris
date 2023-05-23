@@ -137,19 +137,6 @@ static int get_next_piece(MovingPiece *mp, List list, int type,
 // https://tetris.wiki/Super_Rotation_System
 static void rotate(MovingPiece *mp, List list) {
 	int tries = 0;
-	/*do {
-		tries++;
-		mp->rotation++;
-		if (mp->rotation == ROTATIONS) {
-			mp->rotation = -1;
-		}
-
-		if (mp->rotation == -1) {
-			mp->structure = PIECES[mp->type];
-		} else {
-			mp->structure = ROTATED_PIECES[mp->type][mp->rotation];
-		}
-	} while(check_collisions(*mp, list) && tries < ROTATIONS);*/
 
 	while (tries < ROTATIONS) {
 		tries++;
@@ -309,7 +296,7 @@ const void level_advancer(int score, int *level, float *frames_until_fall) {
 	while (1) {
 		cond = (score > (*level * (*level + 1)) / 2 * 1000);
 		if (*level >= 10) {
-			cond = (score > 10 / 2 * 11 * 1000);
+			cond = (score > 10 / 2 * 11 * 1000 + (*level - 10) * 1000);
 		}
 
 		if (*level == 15) {
@@ -326,20 +313,28 @@ const void level_advancer(int score, int *level, float *frames_until_fall) {
 }
 
 // Resize the game and pause if the window is too small.
-static void resize_and_pause(GameWindows *gw, MovingPiece mp, List list, 
+static void wait_for_resize(GameWindows *gw, MovingPiece mp, List list, 
 							 Piece *next_piece, Piece *held_piece) {
-	int can_continue = resize_game(gw, mp, list, next_piece, held_piece);
+	int can_continue = 0;
 	int ch;
 
-	wtimeout(gw->board, -1);	// blocking read
+	// Draw error msg
+	del_main_wins(*gw);
+	set_main_wins(gw);
+	draw_small_error(*gw);
+
+	wtimeout(gw->body, -1);	// blocking read
 	while (!can_continue) {
-		ch = wgetch(gw->board);
+		ch = wgetch(gw->body); // discard useless input (game is paused)
 		if (ch == KEY_RESIZE) {
-			can_continue = resize_game(gw, mp, list, next_piece, held_piece);
-			wtimeout(gw->board, -1);
+			// Redraw error msg
+			del_main_wins(*gw);
+			set_main_wins(gw);
+			draw_small_error(*gw);
+			can_continue = check_if_fits();
 		}
 	}
-	wtimeout(gw->board, 0);		// make it non-blocking again
+	wtimeout(gw->body, 0); // nonblocking
 }
 
 // This function starts the game. Returns the score.
@@ -350,32 +345,74 @@ int begin() {
 	float frames_until_fall = TICKRATE / 2, frames_drawn = 0.0;
 	int ch, type_of_held_piece = -1, has_held = 0, type_of_next_piece = -1;
 	int score = 0, level = 1;
-
+	int queued_draw_next = 0, queued_draw_hold = 0, queued_resize = 0;
 	int seed = time(NULL);
 	srand(seed);
 
 	draw_begin(&gw);
-	wgetch(gw.body); // debug
+	wgetch(gw.title); // debug
 	set_pieces();
 	get_next_piece(&mp, list, type_of_next_piece, &type_of_next_piece);
 
-	if (!draw(gw, mp, list, &PIECES[type_of_next_piece], NULL)) {
-		resize_and_pause(&gw, mp, list, &PIECES[type_of_next_piece], NULL);
+	if (!check_if_fits()) {
+		// Can't start loop. Wait for a resize
+		wait_for_resize(&gw, mp, list, &PIECES[type_of_next_piece], NULL);
+		// Can draw game. End current main wins and begin new mains.
+		del_main_wins(gw);
+		set_main_wins(&gw);
 	}
 
+	// Set game wins
+	set_game_wins(&gw);
+
+	// Initial draw
+	draw(gw, mp, list, &PIECES[type_of_next_piece], NULL);
+
 	while (1) {
+		if (queued_resize) {
+			// Received a resize request. Check if it is possible, if not pause 
+			// the game until it is.
+			Piece *held_piece = NULL;
+			if (type_of_held_piece > -1) {
+				held_piece = &PIECES[type_of_held_piece];
+			}
+
+			if (!check_if_fits()) {
+				del_game_wins(gw);
+
+				wait_for_resize(&gw, mp, list, &PIECES[type_of_next_piece], 
+					held_piece);
+				
+				// Can now size. Reset wins
+				del_main_wins(gw);
+				set_main_wins(&gw);
+				set_game_wins(&gw);
+				draw(gw, mp, list, &PIECES[type_of_next_piece], held_piece);
+			} else {
+				resize_game(&gw, mp, list, &PIECES[type_of_next_piece], 
+					held_piece);
+			}
+
+			queued_resize = 0;
+		}
+
+		if (queued_draw_next) {
+			draw_next_display(gw.next_display, &PIECES[type_of_next_piece]);
+			queued_draw_next = 0;
+		}
+
+		if (queued_draw_hold) {
+			draw_hold_display(gw.hold_display, &PIECES[type_of_held_piece]);
+			queued_draw_hold = 0;
+		}
+
 		draw_board(gw.board, mp, list);
 		upd = mp;
 
 		// Get input
-		while ((ch = wgetch(gw.board)) != -1) {
+		while ((ch = wgetch(gw.body)) != -1) {
 			if (ch == KEY_RESIZE) {
-				Piece *held_piece = NULL;
-				if (type_of_held_piece > -1) {
-					held_piece = &PIECES[type_of_held_piece];
-				}
-				resize_and_pause(&gw, mp, list, &PIECES[type_of_next_piece], 
-					held_piece);
+				queued_resize = 1;
 			} else if (ch == ' ') {
 				fall(&mp, list);
 				// force place
@@ -389,15 +426,14 @@ int begin() {
 					type_of_held_piece = mp.type;
 					get_next_piece(&mp, list, type_of_next_piece, 
 						&type_of_next_piece);
-					draw_next_display(gw.next_display, 
-						&PIECES[type_of_next_piece]);
+					queued_draw_next = 1;
 				} else {
 					int tmp = mp.type;
 					get_specific_piece(&mp, list, type_of_held_piece);
 					type_of_held_piece = tmp;
 				}
 
-				draw_hold_display(gw.hold_display, &PIECES[type_of_held_piece]);
+				queued_draw_hold = 1;
 				frames_drawn = -1.0;
 				upd = mp;
 				break;
@@ -428,8 +464,7 @@ int begin() {
 					// Lose condition
 					break;
 				} else {
-					draw_next_display(gw.next_display, 
-						&PIECES[type_of_next_piece]);
+					queued_draw_next = 1;
 				}
 
 			}

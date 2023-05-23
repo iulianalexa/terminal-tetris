@@ -54,18 +54,18 @@ Node *add_node(List *list) {
 
 // Remove node from list. This requires knowing what the previous node is.
 void remove_node(List *list, Node *node, Node *prev) {
-	Node *next = XOR(node->link, prev);
+	Node *next = XOR(node->link, prev);	// to be prev's new next!
 	
 	if (next != NULL) {
-		Node *nextnext = XOR(next->link, node);
+		Node *nextnext = XOR(next->link, node);	// update next's prev with this
 		next->link = XOR(prev, nextnext);
 	} else {
 		list->end = prev;
 	}
 	
 	if (prev != NULL) {
-		Node *prevprev = XOR(prev->link, node);
-		prev->link = XOR(prevprev, next);
+		Node *prevprev = XOR(prev->link, node);	// get prev's prev
+		prev->link = XOR(prevprev, next);		// updated prev's new next
 	} else {
 		list->start = next;
 	}
@@ -73,7 +73,7 @@ void remove_node(List *list, Node *node, Node *prev) {
 	free(node->value);
 	free(node);
 	list->count--;
-}	
+}
 
 // This function returns the node offset positions away from the current node.
 // If near is the succeding node, then the function will return the node at
