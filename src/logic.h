@@ -1,1 +1,1 @@
-int begin();
+int begin(int *final_level);

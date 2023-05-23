@@ -338,7 +338,7 @@ static void wait_for_resize(GameWindows *gw, MovingPiece mp, List list,
 }
 
 // This function starts the game. Returns the score.
-int begin() {
+int begin(int *final_level) {
 	GameWindows gw;
 	MovingPiece mp, upd;
 	List list = create_list();
@@ -350,7 +350,6 @@ int begin() {
 	srand(seed);
 
 	draw_begin(&gw);
-	wgetch(gw.title); // debug
 	set_pieces();
 	get_next_piece(&mp, list, type_of_next_piece, &type_of_next_piece);
 
@@ -477,5 +476,6 @@ int begin() {
 
 	draw_end();
 
+	*final_level = level;
 	return score;
 }
