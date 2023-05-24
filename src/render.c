@@ -231,6 +231,8 @@ void draw_begin(GameWindows *gw) {
 	set_main_wins(gw);
 }
 
-void draw_end() {
+void draw_end(GameWindows gw) {
+	del_game_wins(gw);
+	del_main_wins(gw);
 	endwin();
 }

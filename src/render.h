@@ -6,7 +6,7 @@ void set_game_wins(GameWindows *gw);
 void resize_game(GameWindows *gw, MovingPiece mp, List list, 
 				Piece *next_piece, Piece *held_piece);
 void draw_begin(GameWindows *gw);
-void draw_end();
+void draw_end(GameWindows gw);
 void draw(GameWindows gw, MovingPiece mp, List list, Piece *next_piece, 
           Piece *held_piece);
 void draw_board(WINDOW *board, MovingPiece mp, List list);

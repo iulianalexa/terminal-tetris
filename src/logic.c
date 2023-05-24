@@ -474,7 +474,8 @@ int begin(int *final_level) {
 		sleep_ms((int) (1000 / TICKRATE));
 	}
 
-	draw_end();
+	draw_end(gw);
+	free_list(&list);
 
 	*final_level = level;
 	return score;

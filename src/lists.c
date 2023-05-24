@@ -75,6 +75,13 @@ void remove_node(List *list, Node *node, Node *prev) {
 	list->count--;
 }
 
+// Frees the list.
+void free_list(List *list) {
+	while (list->start != NULL) {
+		remove_node(list, list->start, NULL);
+	}
+}
+
 // This function returns the node offset positions away from the current node.
 // If near is the succeding node, then the function will return the node at
 // offset positions to the left.
